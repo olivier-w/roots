@@ -17,11 +17,11 @@ class FSParser
 
   ###*
    * Creates a new instance of the FSParser class. Sets up instance vars:
-   * 
+   *
    * - root: the project root
    * - config: roots config object
    * - extensions: all extension instances for this compile
-   * 
+   *
    * @param  {Function} roots - instance of the roots base class
   ###
 
@@ -41,7 +41,7 @@ class FSParser
    *   example: [<File>, <File>, <File>],
    *   static: [<File>]
    * }
-   * 
+   *
    * @return {Object} when.js promise for an ast
   ###
 
@@ -59,7 +59,7 @@ class FSParser
    * with the `parse_file` method below.
    *
    * @private
-   * 
+   *
    * @param  {String} dir - path to a directory
    * @return {Object} 'ast' object, described above
   ###
@@ -97,7 +97,7 @@ class FSParser
    * https://github.com/wearefractal/vinyl
    *
    * @private
-   * 
+   *
    * @param  {String} file - path to a file
   ###
 
@@ -112,7 +112,7 @@ class FSParser
    * on the file. If it returns false, the file is not added to the extension's
    * category and the function returns. If true, the file is added to the
    * extension's category.
-   * 
+   *
    * After this, if the extension has `extract` set to true, meaning that once
    * a file has been added to it's category, it's not eligable to be added to any
    * other category, it returns `true`. At the top of the sort function, if `true`
@@ -125,21 +125,18 @@ class FSParser
    * other categories.
    *
    * @private
-   * 
+   *
    * @param  {Function} ext - a roots extension instance
    * @param  {File} file - vinyl wrapper for a file
    * @param  {Boolean} extract - if true, function is skipped
    * @return {Boolean} promise for a boolean, passed as extract to next function
-   *
-   * @todo handle error if ext.fs doesn't return an object
-   * @todo handle error if ext.fs.detect doesn't exist
-   * @todo handle error if category not found
   ###
 
   sort = (ext, file, extract) ->
     if extract then return true
 
     extfs = ext.fs()
+    check_extension_errors.call(@, extfs)
 
     W.resolve(extfs.detect(file)).then (detected) =>
       if not detected then return false
@@ -149,11 +146,32 @@ class FSParser
       return extfs.extract
 
   ###*
+   * Checks the fs object on an extension to ensure there are no errors in the
+   * formatting.
+   *
+   * @private
+   *
+   * @param  {???} extfs - extension.fs() return result. hopefully an object
+   * @todo write tests for this!
+   * @todo return which extension the error is for
+  ###
+
+  check_extension_errors = (extfs) ->
+    if typeof extfs is not 'object'
+      @roots.bail(125, 'the fs property must return an object')
+
+    if not extfs.detect or not (typeof extfs.detect == 'function')
+      @roots.bail(125, "fs must return an object with a 'detect' function")
+
+    if not extfs.category and not ext.category
+      @roots.bail(125, "this extension is missing a 'category' property")
+
+  ###*
    * Makes sure there are no duplicate directories and that they all directories
    * are passed through as vinyl-wrapped file objects.
    *
    * @private
-   * 
+   *
    * @return {Object} - modified instance of the `ast`
   ###
 
@@ -163,7 +181,7 @@ class FSParser
 
   ###*
    * Checks a file against the ignored list to see if it should be skipped.
-   * 
+   *
    * @param  {String} f - file path
    * @return {Boolean} whether the file should be ignored or not
   ###

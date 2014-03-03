@@ -19,7 +19,7 @@ class Extensions
    * to ensure it's the right type, then flips the extensions backwards and pushes
    * each one to the beginning of the array, conserving order, unless there's a priority
    * given, in which case it's inserted at a certain index.
-   * 
+   *
    * @param  {Object} extensions - an extension or array of extensions
    * @param  {Integer} priority - optional, how early the extension(s) is/are run
   ###
@@ -34,10 +34,10 @@ class Extensions
   ###*
    * Create a new instance of each extension, checking for any sort of errors
    * in the way the extension was configured.
-   * 
+   *
    * @return {Array} - array of instantiated extensions
   ###
-  
+
   instantiate: ->
     extensions = @all.map (Ext) =>
       try ext = new Ext(@roots); catch err then @roots.bail(125, err)
@@ -50,25 +50,25 @@ class Extensions
 
   ###*
    * Ensures that all existant properties of an extension are functions.
-   * 
+   *
    * @param  {Function} ext - instance of an extension
   ###
 
   check_extension_errors = (ext) ->
-    if not_function(ext.fs)
+    if ext.fs and not_function(ext.fs)
       @roots.bail(125, 'the fs property must be a function')
 
-    if not_function(ext.compile_hooks)
+    if ext.compile_hooks && not_function(ext.compile_hooks)
       @roots.bail(125, 'the compile_hooks property must be a function')
 
-    if not_function(ext.category_hooks)
+    if ext.category_hooks && not_function(ext.category_hooks)
       @roots.bail(125, 'the category_hooks property must be a function')
 
   ###*
    * If exists and is not a function. Helper.
    *
    * @private
-   * 
+   *
    * @param  {???} prop - anything
    * @return {Boolean} whether it exists and is not a function or not
   ###
@@ -77,7 +77,7 @@ class Extensions
 
   ###*
    * Returns a given extension's hook, if it exists.
-   * 
+   *
    * @param  {String} name - hook name, separated with periods
    * @return {Function}      the hook function if exists, otherwise undefined
    *
