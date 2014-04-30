@@ -1,10 +1,11 @@
-fs       = require 'fs'
-W        = require 'when'
-nodefn   = require 'when/node'
-guard    = require 'when/guard'
-keys     = require 'when/keys'
-sequence = require 'when/sequence'
-mkdirp   = require 'mkdirp'
+fs             = require 'fs'
+W              = require 'when'
+nodefn         = require 'when/node'
+guard          = require 'when/guard'
+keys           = require 'when/keys'
+sequence       = require 'when/sequence'
+mkdirp         = require 'mkdirp'
+ComputeCluster = require 'compute-cluster'
 
 FSParser = require '../fs_parser'
 Compiler = require '../compiler'
@@ -30,7 +31,10 @@ class Compile
   constructor: (@roots) ->
     @extensions = @roots.extensions.instantiate()
     @fs_parser = new FSParser(@roots, @extensions)
-    @compiler = new Compiler(@roots, @extensions)
+    @cluster = new ComputeCluster
+      module: path.join(__dirname, '../worker.js')
+      max_backlog: -1
+    @compiler = new Compiler(@roots, @extensions, @cluster)
 
   ###*
    * Compiles the project. This process includes the following steps:
@@ -174,7 +178,6 @@ class Compile
         ordered.push(((c) => compile_task.bind(@, c))(category))
       else
         parallel.push(compile_task.call(@, category))
-
 
     keys.all
       ordered: sequence(ordered)

@@ -1,12 +1,12 @@
-fs       = require 'graceful-fs'
-path     = require 'path'
-_        = require 'lodash'
-W        = require 'when'
-nodefn   = require 'when/node'
-pipeline = require 'when/pipeline'
-sequence = require 'when/sequence'
-File     = require 'vinyl'
-mkdirp   = require 'mkdirp'
+fs             = require 'graceful-fs'
+path           = require 'path'
+_              = require 'lodash'
+W              = require 'when'
+nodefn         = require 'when/node'
+pipeline       = require 'when/pipeline'
+sequence       = require 'when/sequence'
+File           = require 'vinyl'
+mkdirp         = require 'mkdirp'
 
 ###*
  * @class Compiler
@@ -24,19 +24,19 @@ class Compiler
    * @param  {Function} @extensions - array of initialzed extensions
   ###
 
-  constructor: (@roots, @extensions) ->
+  constructor: (@roots, @extensions, @cluster) ->
     @options = {}
 
   ###*
    * Compile a single file asynchronously.
    *
-   * @param  {String} category - category the file is being compiled in
+   * @param  {String} cat - category the file is being compiled in
    * @param  {File} file - vinyl-wrapped file
    * @return {Promise} promise for the fully compiled file
   ###
 
-  compile: (category, file) ->
-    cf = new CompileFile(@roots, @extensions, @options, category, file)
+  compile: (cat, file) ->
+    cf = new CompileFile(@roots, @extensions, @cluster, @options, cat, file)
     cf.run()
 
 module.exports = Compiler
@@ -62,7 +62,7 @@ class CompileFile
    * @param  {File}     file            Vinyl-wrapped file
   ###
 
-  constructor: (@roots, @extensions, @compile_options, @category, @file) ->
+  constructor: (@roots, @extensions, @cluster, @compile_options, @category, @file) ->
     @adapters = get_adapters.call(@)
     @is_compiled = !!_(@adapters).pluck('name').compact().value().length
     @file_options = { filename: @file.path }
@@ -333,4 +333,8 @@ class CompilePass
 
   compile_or_pass = ->
     if not @adapter.name then return @content
-    @adapter.render(@content, @opts)
+    nodefn.call @file.cluster.enqueue.bind(@file.cluster),
+      root: @file.roots.root
+      name: @adapter.name
+      content: @content
+    # @adapter.render(@content, @opts)
